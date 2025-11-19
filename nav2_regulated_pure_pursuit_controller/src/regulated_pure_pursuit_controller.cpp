@@ -217,7 +217,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     auto curvature_lookahead_pose = getLookAheadPoint(
       curv_lookahead_dist,
       transformed_plan, params_->interpolate_curvature_after_goal);
-    rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
     curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
   }
@@ -236,7 +235,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
-  if (shouldRotateToGoalHeading(carrot_pose)) {
+  if (shouldRotateToGoalHeading(transformed_plan.poses.back())) {
     is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
@@ -245,10 +244,16 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
     is_rotating_to_heading_ = false;
+    auto linear_vel_copy = linear_vel;
     applyConstraints(
       regulation_curvature, speed,
       collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
       linear_vel, x_vel_sign);
+    applyConstraints(
+      lookahead_curvature, speed,
+      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
+      linear_vel_copy, x_vel_sign);
+    linear_vel = std::min(linear_vel, linear_vel_copy);
 
     if (cancelling_) {
       const double & dt = control_duration_;
@@ -268,7 +273,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     }
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * regulation_curvature;
+    angular_vel = linear_vel * lookahead_curvature;
   }
 
   // Collision checking on this velocity heading
