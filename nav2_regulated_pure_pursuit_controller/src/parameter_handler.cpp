@@ -264,6 +264,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.transform_tolerance = parameter.as_double();
       } else if (name == plugin_name_ + ".max_robot_pose_search_dist") {
         params_.max_robot_pose_search_dist = parameter.as_double();
+      } else if (name == plugin_name_ + ".approach_velocity_scaling_dist") {
+        params_.approach_velocity_scaling_dist = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
