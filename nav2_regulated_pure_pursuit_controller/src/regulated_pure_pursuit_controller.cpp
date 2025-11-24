@@ -256,7 +256,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       lookahead_curvature, speed,
       collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
       linear_vel_copy, x_vel_sign);
-    linear_vel = std::min(linear_vel, linear_vel_copy);
+    if (x_vel_sign >= 0) {
+      linear_vel = std::min(linear_vel, linear_vel_copy);
+    } else {
+      linear_vel = std::max(linear_vel, linear_vel_copy);
+    }
 
     if (cancelling_) {
       const double & dt = control_duration_;
