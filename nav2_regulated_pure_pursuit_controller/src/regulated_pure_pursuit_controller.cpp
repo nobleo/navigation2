@@ -204,7 +204,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Get the particular point on the path at the lookahead distance
-  auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
+  auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan,
+      params_->interpolate_curvature_after_goal);
   auto rotate_to_path_carrot_pose = carrot_pose;
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
