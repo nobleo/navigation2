@@ -337,17 +337,18 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
     return false;
   }
 
+  auto goal_behind_robot = carrot_pose.pose.position.x < 0.0;
   double dist_to_goal = std::hypot(
     carrot_pose.pose.position.x, carrot_pose.pose.position.y);
 
   if (params_->stateful) {
-    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
+    if (!has_reached_xy_tolerance_ && goal_behind_robot && dist_to_goal < goal_dist_tol_) {
       has_reached_xy_tolerance_ = true;
     }
     return has_reached_xy_tolerance_;
   }
 
-  return dist_to_goal < goal_dist_tol_;
+  return goal_behind_robot && dist_to_goal < goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
