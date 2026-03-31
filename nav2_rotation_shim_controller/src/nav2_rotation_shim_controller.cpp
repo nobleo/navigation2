@@ -210,6 +210,13 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     std::lock_guard<std::mutex> lock_reinit(mutex_);
     try {
       auto sampled_pt = getSampledPathPt();
+
+      if (!nav2_util::transformPoseInTargetFrame(sampled_pt, sampled_pt, *tf_,
+          pose.header.frame_id))
+      {
+        throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
+      }
+
       double angular_distance_to_heading;
       if (use_path_orientations_) {
         angular_distance_to_heading = angles::shortest_angular_distance(
