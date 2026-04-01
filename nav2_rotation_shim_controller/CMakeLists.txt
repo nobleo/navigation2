@@ -16,6 +16,7 @@ find_package(angles REQUIRED)
 
 nav2_package()
 set(CMAKE_CXX_STANDARD 17)
+add_compile_options(-Wno-error=null-dereference)
 
 include_directories(
   include
