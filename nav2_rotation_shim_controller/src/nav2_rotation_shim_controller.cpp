@@ -194,6 +194,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         last_angular_vel_ = cmd_vel.twist.angular.z;
         return cmd_vel;
       }
+    } catch (const nav2_core::NoValidControl &) {
+      throw;
     } catch (const std::runtime_error & e) {
       RCLCPP_INFO(
         logger_,
@@ -245,6 +247,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
           "Robot is at the new path's rough heading, passing to controller");
         path_updated_ = false;
       }
+    } catch (const nav2_core::NoValidControl &) {
+      throw;
     } catch (const std::runtime_error & e) {
       RCLCPP_DEBUG(
         logger_,
@@ -352,15 +356,17 @@ void RotationShimController::isCollisionFree(
   double initial_yaw = tf2::getYaw(pose.pose.orientation);
   double yaw = 0.0;
   double footprint_cost = 0.0;
-  double remaining_rotation_before_thresh =
-    fabs(angular_distance_to_heading) - angular_dist_threshold_;
 
   while (simulated_time < simulate_ahead_time_) {
     simulated_time += control_duration_;
     yaw = initial_yaw + cmd_vel.twist.angular.z * simulated_time;
 
-    // Stop simulating past the point it would be passed onto the primary controller
-    if (angles::shortest_angular_distance(yaw, initial_yaw) >= remaining_rotation_before_thresh) {
+    double remaining =
+      angles::shortest_angular_distance(yaw, initial_yaw + angular_distance_to_heading);
+
+    // Stop simulating once we've reached or overshot the target heading
+    // (remaining flips sign when we pass it)
+    if (cmd_vel.twist.angular.z * remaining < 0.0) {
       break;
     }
 
